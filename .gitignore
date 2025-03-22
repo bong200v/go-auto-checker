@@ -1,0 +1,46 @@
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+checker
+web
+login_checker
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Temporary directories
+tmp/
+
+# File upload directories
+/uploads/*
+!/uploads/.gitkeep
+
+# Result directories
+/results/*
+!/results/.gitkeep
+!/results/success/.gitkeep
+!/results/failed/.gitkeep
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Archive files
+*.zip
+
+# Logs
+*.log

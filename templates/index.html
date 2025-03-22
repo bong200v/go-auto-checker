@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="B1 Account Checker - Ứng dụng kiểm tra tài khoản an toàn và hiệu quả">
+    <title>{{ .Title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* Thêm style trực tiếp để đảm bảo hiển thị đúng */
+        #price-card {
+            background-color: #f0f7ff;
+            border-left: 4px solid #4285f4;
+            transition: all 0.3s ease;
+        }
+        
+        .price-item {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .price-separator {
+            font-size: 1.15rem;
+            color: #6c757d;
+            margin: 0 0.5rem;
+        }
+        
+        .total-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4285f4;
+            background-color: rgba(66, 133, 244, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            display: inline-block;
+        }
+        
+        .navbar {
+            background: linear-gradient(90deg, #4361ee, #3f37c9);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.35rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .status-card {
+            border-radius: 0.75rem;
+            border: none;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .status-card.primary {
+            border-left: 4px solid #4361ee;
+        }
+        
+        .status-card.success {
+            border-left: 4px solid #06d6a0;
+        }
+        
+        .status-card.danger {
+            border-left: 4px solid #ef476f;
+        }
+        
+        .status-card.warning {
+            border-left: 4px solid #ffd166;
+        }
+        
+        .card-title {
+            display: flex;
+            align-items: center;
+            color: #4361ee;
+            font-weight: 600;
+        }
+        
+        .card-title i {
+            margin-right: 0.5rem;
+        }
+        
+        .dropzone {
+            border: 2px dashed #ccc;
+            border-radius: 0.75rem;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .dropzone:hover {
+            border-color: #4361ee;
+        }
+        
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+        }
+    </style>
+</head>
+<body>
+    <!-- Lưu trạng thái running từ server để JavaScript có thể truy cập -->
+    <div id="running-state" data-value="{{ .Running }}" style="display: none;"></div>
+
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-shield-check me-2"></i>B1 Account Checker
+            </a>
+        </div>
+    </nav>
+
+    <div class="container dashboard-container">
+        <div class="row mb-4">
+            <!-- Status Cards -->
+            <div class="col-md-3 col-6 mb-4">
+                <div class="card status-card primary">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people-fill status-icon"></i>
+                        <div class="status-value" id="total-accounts">{{ .TotalAccounts }}</div>
+                        <div class="status-title">Tổng tài khoản</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="card status-card success">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check-circle-fill status-icon"></i>
+                        <div class="status-value" id="success-accounts">{{ .SuccessCount }}</div>
+                        <div class="status-title">Thành công</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="card status-card danger">
+                    <div class="card-body text-center">
+                        <i class="bi bi-x-circle-fill status-icon"></i>
+                        <div class="status-value" id="failed-accounts">{{ .FailedCount }}</div>
+                        <div class="status-title">Thất bại</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="card status-card warning">
+                    <div class="card-body text-center">
+                        <i class="bi bi-clock-history status-icon"></i>
+                        <div class="status-value" id="duration">{{ if .Duration }}{{ .Duration }}{{ else }}0s{{ end }}</div>
+                        <div class="status-title">Thời gian</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Card - Hiển thị ngay từ đầu -->
+        <div class="card mb-4" id="price-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-currency-exchange me-2"></i>Báo giá
+                </h5>
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center">
+                            <span class="price-item">200 VNĐ</span>
+                            <span class="price-separator">×</span>
+                            <span class="price-item" id="account-count">0</span>
+                            <span class="price-item">tài khoản</span>
+                            <span class="price-separator">=</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span class="total-price" id="total-price">0 VNĐ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column: Upload and Configuration -->
+            <div class="col-lg-5 mb-4">
+                <!-- Upload Card -->
+                <div class="card mb-4 card-upload">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-cloud-upload me-2"></i>Tải lên file Excel
+                        </h5>
+                        <div id="dropzone" class="dropzone">
+                            <div class="dz-message">
+                                <i class="bi bi-file-earmark-excel mb-2"></i>
+                                <p>Kéo thả file Excel hoặc click để chọn file</p>
+                                <small>Chỉ chấp nhận file Excel (.xlsx)</small>
+                            </div>
+                            <input type="file" id="file-input" accept=".xlsx" class="d-none">
+                        </div>
+                        <div id="upload-success" class="alert alert-success mt-3 d-none">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-check-circle-fill me-2"></i>File đã được tải lên: <strong id="uploaded-filename"></strong>
+                                </div>
+                                <button id="change-file-btn" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Đổi file
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-gear me-2"></i>Cấu hình xử lý
+                        </h5>
+                        <form id="config-form">
+                            <div class="mb-3">
+                                <label for="excel-file" class="form-label">Chọn file Excel</label>
+                                <select class="form-select" id="excel-file" name="excel_file" required>
+                                    <option value="" selected disabled>Chọn file Excel đã tải lên</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="max-workers" class="form-label">Số luồng xử lý</label>
+                                <input type="number" class="form-control" id="max-workers" name="max_workers" min="1" max="50" value="10">
+                                <div class="form-text">Số tài khoản kiểm tra đồng thời</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="start-row" class="form-label">Dòng bắt đầu đọc</label>
+                                <input type="number" class="form-control" id="start-row" name="start_row" min="2" value="2">
+                                <div class="form-text">Vị trí dòng bắt đầu đọc trong file (mặc định: 2)</div>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="save-results" name="save_results" checked>
+                                <label class="form-check-label" for="save-results">Lưu kết quả vào file Excel</label>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="start-btn">
+                                    <i class="bi bi-play-fill me-2"></i>Bắt đầu kiểm tra
+                                </button>
+                                <button type="button" class="btn btn-danger d-none" id="stop-btn">
+                                    <i class="bi bi-stop-fill me-2"></i>Dừng kiểm tra
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Progress and Logs -->
+            <div class="col-lg-7">
+                <!-- Progress Card -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-bar-chart-steps me-2"></i>Tiến độ kiểm tra
+                        </h5>
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tiến độ tổng thể</span>
+                                <span id="progress-text">0/0</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progress-bar"></div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Batch hiện tại</span>
+                                <span id="batch-text">0/0</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 0%" id="batch-progress-bar"></div>
+                            </div>
+                        </div>
+                        <div id="log-container">
+                            <div class="log-message log-info">
+                                <i class="bi bi-info-circle me-2"></i>Hệ thống sẵn sàng. Tải lên file Excel và bắt đầu kiểm tra.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Khu vực kết quả - ban đầu ẩn đi -->
+                <div id="results-section" class="d-none" style="margin: 40px 0; border: 5px solid red; padding: 20px; background-color: #fff8f8;">
+                    <h2 class="text-center text-danger mb-4" style="font-weight: bold; text-transform: uppercase;">KẾT QUẢ ĐÃ SẴN SÀNG - TẢI FILE NGAY</h2>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-danger text-white">
+                            <h5 class="mb-0"><i class="bi bi-check-circle-fill me-2"></i>KẾT QUẢ XỬ LÝ - TẢI XUỐNG FILE</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <span id="result-summary" style="font-weight: bold; font-size: 18px;">Kết quả kiểm tra tài khoản: 0 thành công, 0 thất bại</span>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-success text-white">
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                            <span id="success-file-name">Danh sách tài khoản đúng</span>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <a href="/download/success/b1_success.xlsx" id="download-success-btn" class="btn btn-success btn-lg download-btn btn-pulse" style="min-width: 200px; font-size: 20px; font-weight: bold;">
+                                                <i class="bi bi-download me-2"></i>TẢI XUỐNG
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card mb-3">
+                                        <div class="card-header bg-danger text-white">
+                                            <i class="bi bi-x-circle-fill me-2"></i>
+                                            <span id="failed-file-name">Danh sách tài khoản sai</span>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <a href="/download/failed/b1_failed.xlsx" id="download-failed-btn" class="btn btn-danger btn-lg download-btn btn-pulse" style="min-width: 200px; font-size: 20px; font-weight: bold;">
+                                                <i class="bi bi-download me-2"></i>TẢI XUỐNG
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning mt-3" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Lưu ý:</strong> Các file kết quả sẽ bị xóa khi bạn tắt ứng dụng. Vui lòng tải xuống và lưu trữ ngay.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html> 
