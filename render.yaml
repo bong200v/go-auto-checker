@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: go-auto-checker
+    env: go
+    buildCommand: go build -tags netgo -ldflags '-s -w' -o app ./cmd/web
+    startCommand: ./app
+    repo: https://github.com/bong200v/go-auto-checker.git
+    branch: main
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 8080
+ 
